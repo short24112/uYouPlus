@@ -115,9 +115,15 @@ jobs:
         env:
           THEOS: ${{ github.workspace }}/theos
 
-      - name: Prepare YouTube iPA
+            - name: Prepare YouTube iPA
         id: prepare_youtube
         run: |
+          if [[ "$YOUTUBE_URL" == *"drive.google.com"* && "$YOUTUBE_URL" != *"uc?export=download"* ]]; then
+            FILE_ID=$(echo "$YOUTUBE_URL" | grep -oE '[-\w]{25,}')
+            YOUTUBE_URL="https://drive.google.com/uc?export=download&id=${FILE_ID}"
+            echo "==> Converted to direct download link: $YOUTUBE_URL"
+          fi
+
           wget "$YOUTUBE_URL" --no-verbose -O main/YouTube.ipa
           cd ${{ github.workspace }}/main
           mv YouTube.ipa YouTube.zip
@@ -126,7 +132,7 @@ jobs:
           echo "==> YouTube v$youtube_version downloaded!"
           sed -i '' "17s#.*#YOUTUBE_VERSION = ${youtube_version}#g" Makefile
           echo "youtube_version=${youtube_version}" >> $GITHUB_OUTPUT
-
+        
         env:
           THEOS: ${{ github.workspace }}/theos
           YOUTUBE_URL: ${{ inputs.decrypted_youtube_url }}
